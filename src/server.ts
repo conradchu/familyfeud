@@ -67,6 +67,8 @@ displayApp.get("/theme.m4a", (_req, res) => {
     if (err && !res.headersSent) res.status(404).send("theme not found");
   });
 });
+// Serve sound effect files from audio/sfx/ at /sfx/<file>.
+displayApp.use("/sfx", express.static(path.join(ROOT, "audio", "sfx")));
 const displayServer = http.createServer(displayApp);
 const displayIo = new IOServer(displayServer, { cors: { origin: "*" } });
 

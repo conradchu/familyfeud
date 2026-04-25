@@ -26,6 +26,32 @@ let audioCtx = null;
 let masterGain = null;
 let themeAudio = null;
 let lastState = null;
+const sfxBuffers = { strike: null, ding: null }; // AudioBuffers, loaded lazily
+
+async function loadSample(name, url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const arr = await res.arrayBuffer();
+    const buf = await audioCtx.decodeAudioData(arr);
+    sfxBuffers[name] = buf;
+    console.log(`[sfx] loaded ${name} (${url})`);
+  } catch (err) {
+    console.warn(`[sfx] failed to load ${name}, will fall back to synth:`, err);
+  }
+}
+
+function playSample(name, gainValue = 1.0) {
+  const buf = sfxBuffers[name];
+  if (!buf || !audioCtx) return false;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const g = audioCtx.createGain();
+  g.gain.value = gainValue;
+  src.connect(g).connect(masterGain);
+  src.start(audioCtx.currentTime);
+  return true;
+}
 
 // ----- Audio engine -----
 function initAudio() {
@@ -42,12 +68,23 @@ function initAudio() {
   themeAudio.volume = lastState?.audio?.themeVolume ?? 0.7;
   themeAudio.preload = "auto";
 
+  // Kick off SFX sample loads in parallel — playStrike/playReveal will use them
+  // once decoded, and fall back to the Web Audio synth in the meantime.
+  loadSample("strike", "/sfx/strike.mp3");
+  loadSample("ding",   "/sfx/ding.mp3");
+
   audioReady = true;
   applyAudioState(lastState);
 }
 
-// "DING!" — bright bell with bell-partial ratios (1, 2.76) and a short sparkle on attack.
+// "DING!" — uses the show's actual sample if loaded, falls back to bell synth.
 function playReveal() {
+  if (!audioReady || lastState?.audio?.muted) return;
+  if (playSample("ding", 0.85)) return;
+  playRevealSynth();
+}
+
+function playRevealSynth() {
   if (!audioReady || lastState?.audio?.muted) return;
   const t = audioCtx.currentTime;
   const fundamental = 880; // A5 — bright ding range
@@ -87,9 +124,14 @@ function playReveal() {
   clickOsc.stop(t + 0.05);
 }
 
-// "EHHHHH!" — the show's nasal wrong-answer buzzer. Detuned saw + square through a
-// resonant bandpass at ~800Hz gives the honking quality, plus a noise transient for punch.
+// "EHHHHH!" — uses the show's actual buzzer sample if loaded, falls back to synth.
 function playStrike() {
+  if (!audioReady || lastState?.audio?.muted) return;
+  if (playSample("strike", 0.85)) return;
+  playStrikeSynth();
+}
+
+function playStrikeSynth() {
   if (!audioReady || lastState?.audio?.muted) return;
   const t = audioCtx.currentTime;
   const dur = 0.55;
