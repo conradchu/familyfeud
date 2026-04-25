@@ -1,11 +1,11 @@
 # Family Feud Live
 
-Run a Family Feud-style game from your laptop with a phone as the buzzer-room remote control. Two screens, one Node/TypeScript process, real-time sync over WebSocket, SQLite-backed crash recovery.
+Host a Family Feud-style game from your laptop and run it from your phone. Two screens, one Node/TypeScript process, WebSocket sync, SQLite so a crash mid-game doesn't lose anything.
 
-- **Port 3000 — Audience display.** Big oval board, team scores, pot, strikes overlay, theme music, ding/buzzer sound effects. Open on the laptop you're projecting.
-- **Port 4000 — Game master admin.** Reveal answers, mark strikes, award the pot, edit team names, jump between questions, mute/unmute. Designed for phone.
+- **Port 3000 — Audience display.** Big oval board, team scores, pot, strikes overlay, theme music, ding and buzzer sound effects. Open on the laptop you're projecting.
+- **Port 4000 — Game master admin.** Reveal answers, mark strikes, award the pot, edit team names, jump between questions, mute or unmute. Built for a phone.
 
-Both screens stay in sync over Socket.IO. State persists across crashes — restart and you're exactly where you left off.
+Both screens stay in sync over Socket.IO. If the server dies mid-round, restart it and you're back exactly where you were.
 
 <table>
 <tr>
@@ -34,7 +34,7 @@ Then:
 - Audience: <http://localhost:3000>  (project / share screen)
 - Admin:    <http://localhost:4000>  (open on your phone)
 
-For phone access on the same Wi-Fi, use `http://<your-mac-ip>:4000`. (On macOS: `ipconfig getifaddr en0`.) If you need to reach the admin from outside your LAN, point any tunnel of your choice at port 4000.
+For phone access on the same Wi-Fi, use `http://<your-mac-ip>:4000`. On macOS, `ipconfig getifaddr en0` gives you the IP. If you need to reach the admin from outside your LAN, point any tunnel of your choice at port 4000.
 
 ## Questions CSV
 
@@ -57,11 +57,10 @@ Name something you find in a kitchen,Stove,22
 2. Pick a question from the dropdown.
 3. **Start Round** — the question lights up on the audience screen, board hides answers.
 4. As contestants answer, hit **Reveal** on the answer they said. Points add to the pot.
-5. Wrong answer? Hit **✕ Strike**. Three Xs flash on the audience screen.
-6. **Award pot →** to give the round's pot to whichever team won the round.
-7. **Next ▶** to advance to the next question.
-
-The big red `✕` overlay flashes for ~1.5s on the audience screen each time you click strike.
+5. Wrong answer during a round? Hit **✕ Strike**. Three Xs flash on the audience screen and the buzzer plays.
+6. Wrong answer during the face-off (where the first wrong answer doesn't count as a strike on the show)? Hit **🔊 Buzz** instead. Same sound, no strike counted.
+7. **Award pot →** sends the round's pot to whichever team won.
+8. **Next ▶** advances to the next question.
 
 ## Sound
 
@@ -82,7 +81,7 @@ Both are part of game state and persist across restart.
 
 ## Persistence
 
-State is saved to `familyfeud.db` (SQLite, WAL mode) after every command. If the server crashes mid-game, restart it with `npm start` and you'll come back exactly where you left off — same question, revealed answers, pot, strikes, scores, team names.
+State is saved to `familyfeud.db` (SQLite, WAL mode) after every command. If the server crashes mid-game, restart it with `npm start` and you'll come back exactly where you were: same question, same revealed answers, same pot, strikes, scores, team names.
 
 - `DB_PATH=/some/path npm start` to put the DB elsewhere.
 - **Reload CSV** (admin) re-reads `questions.csv` and resets game state but keeps team names. The new state is then persisted.
@@ -110,20 +109,20 @@ There are a handful of Family Feud implementations on GitHub. Quick lay of the l
 
 ### Where this project is different
 
-- **Real separated admin/display over WebSocket.** Only Friendly-Feud does this seriously, but at the cost of Docker + Go + room-code lobbies. This one is `npm install && npm start` on a single Node process.
-- **SQLite crash recovery.** None of the projects above persist live game state — they all start fresh on reload. Restart this one and you're exactly where you left off.
-- **Mobile-first admin on a dedicated port.** Friendly-Feud's admin is responsive but desktop-first; the others assume the host is at a keyboard. This one is designed to run from your phone.
-- **Synthesized Web Audio SFX (no asset shipping).** Most projects ship `.ogg` / `.mp3` files; the ding and buzzer here are math, not media. Cleaner repo, no licensing.
-- **Broadcast visual fidelity.** Oval board, gold frame, animated tile flips, score pills. Most projects look utilitarian.
+- **Properly separated admin and display over WebSocket.** Only Friendly-Feud does this seriously, and that one needs Docker, Go, and room-code lobbies. This is `npm install && npm start` in a single Node process.
+- **SQLite crash recovery.** None of the projects above persist live game state. They all start fresh on reload. This one survives a kernel panic mid-round.
+- **Mobile-first admin on a dedicated port.** Friendly-Feud's admin is responsive but built desktop-first. The others assume the host is at a keyboard. Yours runs from a phone.
+- **Synthesized Web Audio SFX (no asset shipping).** Most projects ship `.ogg` or `.mp3` files. The ding and buzzer here are math, not media. Cleaner repo, no licensing headaches.
+- **Looks like the actual TV show.** Oval board, gold frame, animated tile flips, score pills. Most projects look utilitarian.
 
-### Honest gaps this project doesn't fill
+### What this project doesn't do
 
-- **No multi-room or remote play.** Friendly-Feud's join-code system lets strangers play over the internet; this is LAN-only by design.
-- **No Fast Money round.** Friendly-Feud has it with timers.
+- **No multi-room or remote play.** Friendly-Feud's join-code system lets strangers play over the internet. This is LAN-only on purpose.
+- **No Fast Money round.** Friendly-Feud has one, with timers.
 - **No physical hardware-buzzer integration.** ChicagoBlend and ebron-tech both support this.
 - **No i18n.** Friendly-Feud ships four languages.
 
-If you want a feature-complete hosted product, use Friendly-Feud. If you want a lightweight, self-contained, broadcast-looking party game you can run off your laptop in five minutes, use this.
+If you want a hosted, feature-complete product, use Friendly-Feud. If you want something lightweight you can throw on your laptop in five minutes that looks like the show, use this.
 
 ## License
 

@@ -46,63 +46,105 @@ function initAudio() {
   applyAudioState(lastState);
 }
 
-// Iconic "ding!" — short bell stack with quick attack, exponential decay.
+// "DING!" — bright bell with bell-partial ratios (1, 2.76) and a short sparkle on attack.
 function playReveal() {
   if (!audioReady || lastState?.audio?.muted) return;
   const t = audioCtx.currentTime;
-  const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6 — major triad + octave
-  freqs.forEach((freq, i) => {
+  const fundamental = 880; // A5 — bright ding range
+
+  // Master envelope for the ding
+  const out = audioCtx.createGain();
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(0.45, t + 0.005);
+  out.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+  out.connect(masterGain);
+
+  // Bell partials — fundamental + inharmonic upper partial (church-bell style)
+  [
+    { f: fundamental,        type: "sine",     gain: 0.7 },
+    { f: fundamental * 2.76, type: "sine",     gain: 0.25 },
+    { f: fundamental * 5.4,  type: "triangle", gain: 0.08 },
+  ].forEach(({ f, type, gain }) => {
     const osc = audioCtx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = f;
     const g = audioCtx.createGain();
-    osc.type = i === 0 ? "triangle" : "sine";
-    osc.frequency.value = freq;
-    const start = t + i * 0.012;
-    g.gain.setValueAtTime(0, start);
-    g.gain.linearRampToValueAtTime(0.28, start + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.001, start + 0.85);
-    osc.connect(g).connect(masterGain);
-    osc.start(start);
-    osc.stop(start + 0.9);
+    g.gain.value = gain;
+    osc.connect(g).connect(out);
+    osc.start(t);
+    osc.stop(t + 1.5);
   });
+
+  // Tiny attack click for punch
+  const clickOsc = audioCtx.createOscillator();
+  clickOsc.type = "square";
+  clickOsc.frequency.value = 1760;
+  const clickGain = audioCtx.createGain();
+  clickGain.gain.setValueAtTime(0.18, t);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  clickOsc.connect(clickGain).connect(masterGain);
+  clickOsc.start(t);
+  clickOsc.stop(t + 0.05);
 }
 
-// Iconic "EH-EH-EH!" buzzer: low sawtooth with tremolo + lowpass.
+// "EHHHHH!" — the show's nasal wrong-answer buzzer. Detuned saw + square through a
+// resonant bandpass at ~800Hz gives the honking quality, plus a noise transient for punch.
 function playStrike() {
   if (!audioReady || lastState?.audio?.muted) return;
   const t = audioCtx.currentTime;
-  const dur = 0.85;
+  const dur = 0.55;
 
-  const osc = audioCtx.createOscillator();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(165, t);
-  osc.frequency.linearRampToValueAtTime(140, t + dur);
+  // Master envelope
+  const out = audioCtx.createGain();
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(0.5, t + 0.012);
+  out.gain.linearRampToValueAtTime(0.5, t + dur - 0.08);
+  out.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  out.connect(masterGain);
 
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 1200;
-  filter.Q.value = 1.5;
+  // Resonant bandpass for nasal honk
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 800;
+  bp.Q.value = 3.5;
+  bp.connect(out);
 
-  // Tremolo — pulses ~7Hz to give that "EH-EH-EH" feel
-  const tremolo = audioCtx.createOscillator();
-  tremolo.type = "sine";
-  tremolo.frequency.value = 7;
-  const tremGain = audioCtx.createGain();
-  tremGain.gain.value = 0.35;
-  tremolo.connect(tremGain);
+  // Two detuned oscillators (saw + square) at ~200Hz with slight downward pitch slide
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = "sawtooth";
+  osc1.frequency.setValueAtTime(210, t);
+  osc1.frequency.linearRampToValueAtTime(190, t + dur);
 
-  const gain = audioCtx.createGain();
-  // baseline level + tremolo modulation
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.4, t + 0.02);
-  gain.gain.linearRampToValueAtTime(0.4, t + dur - 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  tremGain.connect(gain.gain);
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = "square";
+  osc2.frequency.setValueAtTime(211, t); // ~1Hz detune for thickness
+  osc2.frequency.linearRampToValueAtTime(189, t + dur);
 
-  osc.connect(filter).connect(gain).connect(masterGain);
-  osc.start(t);
-  osc.stop(t + dur);
-  tremolo.start(t);
-  tremolo.stop(t + dur);
+  const oscGain1 = audioCtx.createGain();
+  oscGain1.gain.value = 0.55;
+  const oscGain2 = audioCtx.createGain();
+  oscGain2.gain.value = 0.4;
+
+  osc1.connect(oscGain1).connect(bp);
+  osc2.connect(oscGain2).connect(bp);
+  osc1.start(t); osc1.stop(t + dur);
+  osc2.start(t); osc2.stop(t + dur);
+
+  // Noise transient at the attack for the "BLAT" punch
+  const noiseDur = 0.06;
+  const noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * noiseDur, audioCtx.sampleRate);
+  const noiseData = noiseBuf.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+  const noiseSrc = audioCtx.createBufferSource();
+  noiseSrc.buffer = noiseBuf;
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = "bandpass";
+  noiseFilter.frequency.value = 1200;
+  noiseFilter.Q.value = 1;
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.value = 0.4;
+  noiseSrc.connect(noiseFilter).connect(noiseGain).connect(masterGain);
+  noiseSrc.start(t);
 }
 
 // Theme management — driven by state.
