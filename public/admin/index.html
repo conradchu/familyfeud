@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>Family Feud — Admin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <strong>Family Feud · Admin</strong>
+        <span id="conn" class="conn">…</span>
+      </div>
+      <div class="topbar__right">
+        <button id="theme"  class="btn btn-ghost" title="Toggle theme music">🎵 Theme</button>
+        <button id="mute"   class="btn btn-ghost" title="Toggle mute (all sound)">🔊</button>
+        <button id="reload" class="btn btn-ghost">Reload CSV</button>
+        <button id="reset"  class="btn btn-warn">Reset Game</button>
+      </div>
+    </header>
+
+    <main class="app">
+    <section class="vol">
+      <label class="vol__label" for="vol">🎵 Theme volume <span id="vol-num">70</span></label>
+      <input type="range" id="vol" class="vol__slider" min="0" max="100" step="1" />
+      <div class="vol__presets">
+        <button class="btn vol-preset" data-vol="8">Soft</button>
+        <button class="btn vol-preset" data-vol="50">Medium</button>
+        <button class="btn vol-preset" data-vol="90">Loud</button>
+      </div>
+    </section>
+
+    <section class="teams">
+      <div class="team" data-team="0">
+        <label class="team__label" for="team-name-0">✏️ Tap to rename</label>
+        <input class="team__name" id="team-name-0" data-team="0" placeholder="Team name" />
+        <div class="team__score" id="score-0">0</div>
+        <div class="team__btns">
+          <button class="btn" data-act="adjust" data-team="0" data-delta="-5">-5</button>
+          <button class="btn" data-act="adjust" data-team="0" data-delta="-1">-1</button>
+          <button class="btn" data-act="adjust" data-team="0" data-delta="1">+1</button>
+          <button class="btn" data-act="adjust" data-team="0" data-delta="5">+5</button>
+        </div>
+        <button class="btn btn-primary big" data-act="award" data-team="0">
+          Award pot → <span class="team-name-ref" data-team="0">Team 1</span>
+        </button>
+      </div>
+      <div class="team" data-team="1">
+        <label class="team__label" for="team-name-1">✏️ Tap to rename</label>
+        <input class="team__name" id="team-name-1" data-team="1" placeholder="Team name" />
+        <div class="team__score" id="score-1">0</div>
+        <div class="team__btns">
+          <button class="btn" data-act="adjust" data-team="1" data-delta="-5">-5</button>
+          <button class="btn" data-act="adjust" data-team="1" data-delta="-1">-1</button>
+          <button class="btn" data-act="adjust" data-team="1" data-delta="1">+1</button>
+          <button class="btn" data-act="adjust" data-team="1" data-delta="5">+5</button>
+        </div>
+        <button class="btn btn-primary big" data-act="award" data-team="1">
+          Award pot → <span class="team-name-ref" data-team="1">Team 2</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="instructions-admin">
+      <div class="instructions-admin__head">
+        <strong>📖 Instructions</strong>
+        <button class="btn btn-primary" id="ins-toggle">Show on TV</button>
+      </div>
+      <div class="instructions-admin__nav">
+        <button class="btn" id="ins-prev">◀ Prev</button>
+        <span class="instructions-admin__page" id="ins-page">1 / 4</span>
+        <button class="btn" id="ins-next">Next ▶</button>
+      </div>
+      <div class="instructions-admin__chips" id="ins-chips">
+        <button class="btn ins-chip" data-ins-page="0">1. The Game</button>
+        <button class="btn ins-chip" data-ins-page="1">2. Face-Off</button>
+        <button class="btn ins-chip" data-ins-page="2">3. Strikes</button>
+        <button class="btn ins-chip" data-ins-page="3">4. Winning</button>
+      </div>
+    </section>
+
+    <section class="round">
+      <div class="round__head">
+        <div class="round__nav">
+          <button class="btn" id="prev-q">◀</button>
+          <select id="goto-q"></select>
+          <button class="btn" id="next-q">▶</button>
+        </div>
+        <div class="round__meta">
+          <span class="badge" id="qmeta">no question</span>
+          <span class="pot-badge">Pot: <strong id="pot-display">0</strong></span>
+        </div>
+      </div>
+      <div class="round__question" id="round-question">—</div>
+      <div class="round__btns">
+        <button class="btn btn-ghost" id="show-q">Show question on TV</button>
+        <button class="btn btn-primary" id="start-round">Start Round</button>
+        <button class="btn btn-ghost"  id="end-round">End Round</button>
+        <button class="btn btn-warn"   id="strike" title="Counts as a strike">✕ Strike</button>
+        <button class="btn btn-buzz"   id="buzz" title="Wrong-answer buzz (face-off, no strike)">🔊 Buzz</button>
+        <button class="btn btn-ghost"  id="clear-strikes">Clear strikes</button>
+      </div>
+      <div class="round__control">
+        <span>Control:</span>
+        <button class="btn" data-act="control" data-team="0">
+          <span class="team-name-ref" data-team="0">Team 1</span>
+        </button>
+        <button class="btn" data-act="control" data-team="1">
+          <span class="team-name-ref" data-team="1">Team 2</span>
+        </button>
+        <button class="btn btn-ghost" data-act="control" data-team="">none</button>
+        <span class="strikes-pill"><span id="strikes-pill">0</span> / 3 strikes</span>
+      </div>
+    </section>
+
+    <section class="answers" id="answers">
+      <div class="answers__empty">Pick a question and start the round.</div>
+    </section>
+
+    <footer class="footer">
+      <span id="csv-info">…</span>
+    </footer>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

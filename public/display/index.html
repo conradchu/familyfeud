@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Family Feud — Audience</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <header class="question-banner" id="question-banner">
+        <div class="question-text" id="question-text">Get ready…</div>
+      </header>
+
+      <div class="play-area">
+        <div class="score-pill score-pill--left" id="score-left">
+          <div class="score-pill__name" id="name-left">Team 1</div>
+          <div class="score-pill__num" id="num-left">0</div>
+        </div>
+
+        <div class="board-frame">
+          <div class="pot" id="pot">0</div>
+          <div class="board" id="board"></div>
+          <div class="strikes" id="strikes" hidden>
+            <span class="x">X</span><span class="x">X</span><span class="x">X</span>
+          </div>
+        </div>
+
+        <div class="score-pill score-pill--right" id="score-right">
+          <div class="score-pill__name" id="name-right">Team 2</div>
+          <div class="score-pill__num" id="num-right">0</div>
+        </div>
+      </div>
+
+      <div class="brand">FAMILY FEUD</div>
+    </div>
+
+    <div id="instructions" class="instructions" hidden>
+      <div class="instructions__card">
+        <div class="instructions__header">HOW TO PLAY</div>
+
+        <div class="instructions__page" data-page="0">
+          <div class="instructions__title">1 · The Game</div>
+          <ul class="instructions__list">
+            <li>We surveyed <strong>100 people</strong>. Their top answers are on the board.</li>
+            <li>Two teams compete to guess the most popular answers.</li>
+            <li>Each answer is worth points based on <strong>how many people said it</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="instructions__page" data-page="1">
+          <div class="instructions__title">2 · Face-Off</div>
+          <ul class="instructions__list">
+            <li>One player from each team faces off — first to buzz in answers.</li>
+            <li>The <strong>highest-rated answer</strong> wins control of the round.</li>
+            <li>The controlling team takes turns guessing the rest of the board.</li>
+          </ul>
+        </div>
+
+        <div class="instructions__page" data-page="2">
+          <div class="instructions__title">3 · Strikes</div>
+          <ul class="instructions__list">
+            <li>A wrong answer = <span class="instructions__x">✕</span> <strong>STRIKE</strong>.</li>
+            <li><strong>Three strikes</strong> and the other team gets <strong>one chance to steal</strong>.</li>
+            <li>Steal a remaining answer → take the entire pot. Miss → original team keeps it.</li>
+          </ul>
+        </div>
+
+        <div class="instructions__page" data-page="3">
+          <div class="instructions__title">4 · Winning</div>
+          <ul class="instructions__list">
+            <li>Whichever team wins the round adds the <strong>pot</strong> to their score.</li>
+            <li>Highest total score after all rounds wins.</li>
+            <li class="instructions__tagline">Survey says…&nbsp;<strong>good luck.</strong></li>
+          </ul>
+        </div>
+
+        <div class="instructions__footer">
+          <span class="instructions__page-num" id="instructions-page-num">1 / 4</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="audio-gate" class="audio-gate">
+      <div class="audio-gate__inner">
+        <div class="audio-gate__title">FAMILY FEUD</div>
+        <div class="audio-gate__sub">Click anywhere to start</div>
+        <div class="audio-gate__hint">(enables sound + theme music)</div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+node_modules
+dist
+.DS_Store
+*.log
+familyfeud.db
+familyfeud.db-journal
+familyfeud.db-wal
+familyfeud.db-shm
+
+# Third-party media — bring your own. The Family Feud theme song is
+# copyrighted by its rightsholders and is not redistributable under our license.
+audio/sfx/*.m4a
+audio/sfx/*.mp3
+audio/sfx/*.wav
+audio/sfx/*.ogg
