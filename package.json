@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsc -w & nodemon --watch dist --watch public --watch questions.csv dist/server.js"
+    "dev": "tsc -w & nodemon --watch dist --watch public --watch questions.csv --watch questions.template.csv dist/server.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.3.0",

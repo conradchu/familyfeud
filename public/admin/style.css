@@ -112,6 +112,12 @@ button, input, select { font: inherit; color: inherit; }
 
 .btn.is-active { outline: 2px solid var(--gold); outline-offset: 1px; }
 
+/* --- Undo last award --- */
+.undo-award {
+  margin-top: calc(var(--gap) * -0.25);
+}
+.undo-award .btn { width: 100%; }
+
 /* --- Teams --- */
 .teams {
   display: grid;
@@ -325,6 +331,8 @@ button, input, select { font: inherit; color: inherit; }
 }
 .pot-badge { color: var(--gold); font-size: 14px; }
 .pot-badge strong { font-size: 22px; }
+.pot-badge.pot-locked::before { content: "🔒 "; }
+.pot-badge.pot-locked { color: #f5d36b; }
 
 .round__question {
   font-size: 17px;

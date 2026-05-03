@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import http from "http";
 import path from "path";
 import { Server as IOServer } from "socket.io";
@@ -21,13 +22,20 @@ import {
   setControllingTeam,
   setTeamName,
   startRound,
+  undoLastAward,
   unrevealAnswer,
 } from "./state";
 import { GameState } from "./types";
 
 const ROOT = path.resolve(__dirname, "..");
 const PUBLIC = path.join(ROOT, "public");
-const CSV_PATH = path.join(ROOT, "questions.csv");
+// questions.csv is gitignored (host-specific); fall back to the committed template
+// for fresh checkouts. Either file may be edited and picked up via "Reload CSV".
+const CSV_PATH = (() => {
+  const local = path.join(ROOT, "questions.csv");
+  const template = path.join(ROOT, "questions.template.csv");
+  return fs.existsSync(local) ? local : template;
+})();
 const DB_PATH = process.env.DB_PATH ?? path.join(ROOT, "familyfeud.db");
 
 const DISPLAY_PORT = Number(process.env.DISPLAY_PORT ?? 3000);
@@ -102,6 +110,7 @@ type Cmd =
   | { type: "buzz" }
   | { type: "clear_strikes" }
   | { type: "award_pot"; team: 0 | 1 }
+  | { type: "undo_award" }
   | { type: "adjust_score"; team: 0 | 1; delta: number }
   | { type: "set_team_name"; team: 0 | 1; name: string }
   | { type: "set_controlling_team"; team: 0 | 1 | null }
@@ -168,6 +177,9 @@ function handle(cmd: Cmd) {
       break;
     case "award_pot":
       awardPotToTeam(state, cmd.team);
+      break;
+    case "undo_award":
+      undoLastAward(state);
       break;
     case "adjust_score":
       adjustScore(state, cmd.team, cmd.delta);

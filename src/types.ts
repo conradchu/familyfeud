@@ -25,7 +25,14 @@ export type Round =
       strikeFlash: number; // increments to trigger client-side X flash
       buzzFlash: number;   // wrong-answer buzz that does NOT count as a strike (face-off)
       controllingTeam: 0 | 1 | null;
+      // Once true, reveals/unreveals no longer change pot. Set when the pot is awarded.
+      locked: boolean;
     };
+
+export interface LastAward {
+  team: 0 | 1;
+  amount: number;
+}
 
 export interface AudioState {
   muted: boolean;
@@ -50,4 +57,7 @@ export interface GameState {
   };
   audio: AudioState;
   instructions: InstructionsState;
+  // Most recent pot award. Set on award_pot, cleared on undo / endRound / question change.
+  // Powers the "Undo last award" admin button.
+  lastAward: LastAward | null;
 }

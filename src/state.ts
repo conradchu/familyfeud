@@ -12,6 +12,7 @@ export function makeInitialState(questions: Question[]): GameState {
     reveal: { questionVisible: false },
     audio: { muted: false, themePlaying: true, themeVolume: 0.7 },
     instructions: { visible: false, page: 0, total: INSTRUCTIONS_TOTAL },
+    lastAward: null,
   };
 }
 
@@ -31,6 +32,12 @@ export function migrateState(state: GameState): GameState {
   }
   if (state.round.kind === "playing" && typeof (state.round as { buzzFlash?: number }).buzzFlash !== "number") {
     state.round.buzzFlash = 0;
+  }
+  if (state.round.kind === "playing" && typeof (state.round as { locked?: boolean }).locked !== "boolean") {
+    state.round.locked = false;
+  }
+  if (typeof state.lastAward === "undefined") {
+    state.lastAward = null;
   }
   return state;
 }
@@ -60,8 +67,10 @@ export function startRound(state: GameState): void {
     strikeFlash: 0,
     buzzFlash: 0,
     controllingTeam: null,
+    locked: false,
   };
   state.reveal.questionVisible = true;
+  state.lastAward = null;
 }
 
 export function addBuzz(state: GameState): void {
@@ -75,7 +84,9 @@ export function revealAnswer(state: GameState, index: number): void {
   const a = q.answers[index];
   if (!a || a.revealed) return;
   a.revealed = true;
-  state.round.pot += a.points;
+  // Once the pot is awarded (locked), revealing leftovers is for show only —
+  // don't re-grow the pot, or a subsequent re-award would over-pay.
+  if (!state.round.locked) state.round.pot += a.points;
 }
 
 export function unrevealAnswer(state: GameState, index: number): void {
@@ -84,7 +95,7 @@ export function unrevealAnswer(state: GameState, index: number): void {
   const a = q.answers[index];
   if (!a || !a.revealed) return;
   a.revealed = false;
-  state.round.pot = Math.max(0, state.round.pot - a.points);
+  if (!state.round.locked) state.round.pot = Math.max(0, state.round.pot - a.points);
 }
 
 export function addStrike(state: GameState): void {
@@ -93,11 +104,17 @@ export function addStrike(state: GameState): void {
     state.round.strikes = (state.round.strikes + 1) as 0 | 1 | 2 | 3;
   }
   state.round.strikeFlash += 1;
+  // 3 strikes = round decided. Freeze the pot so leftover-answer reveals (for show)
+  // don't inflate the eventual award.
+  if (state.round.strikes === 3) state.round.locked = true;
 }
 
 export function clearStrikes(state: GameState): void {
   if (state.round.kind !== "playing") return;
   state.round.strikes = 0;
+  // If strikes were cleared (e.g. mis-tap), reverse the 3-strike auto-lock too —
+  // but only when the pot hasn't been awarded yet (no lastAward outstanding).
+  if (!state.lastAward) state.round.locked = false;
 }
 
 export function awardPotToTeam(state: GameState, team: 0 | 1): number {
@@ -105,7 +122,20 @@ export function awardPotToTeam(state: GameState, team: 0 | 1): number {
   const pot = state.round.pot;
   state.teams[team].score += pot;
   state.round.pot = 0;
+  state.round.locked = true;
+  state.lastAward = { team, amount: pot };
   return pot;
+}
+
+export function undoLastAward(state: GameState): void {
+  const last = state.lastAward;
+  if (!last) return;
+  state.teams[last.team].score = Math.max(0, state.teams[last.team].score - last.amount);
+  if (state.round.kind === "playing") {
+    state.round.pot += last.amount;
+    state.round.locked = false;
+  }
+  state.lastAward = null;
 }
 
 export function adjustScore(state: GameState, team: 0 | 1, delta: number): void {
@@ -124,6 +154,7 @@ export function setControllingTeam(state: GameState, team: 0 | 1 | null): void {
 export function endRound(state: GameState): void {
   state.round = { kind: "idle" };
   state.reveal.questionVisible = false;
+  state.lastAward = null;
 }
 
 export function gotoQuestion(state: GameState, index: number): void {
@@ -131,6 +162,7 @@ export function gotoQuestion(state: GameState, index: number): void {
   state.currentQuestionIndex = index;
   state.round = { kind: "idle" };
   state.reveal.questionVisible = false;
+  state.lastAward = null;
   // reset reveals on the new question
   const q = state.questions[index];
   for (const a of q.answers) a.revealed = false;

@@ -49,7 +49,9 @@ There's no schema versioning beyond defensive backfills. If you need a structura
 
 ### CSV → questions
 
-`src/csv.ts` parses `questions.csv` (columns: `question`, `answer`, `points`). Rows with the same `question` text are grouped into one `Question`; answers are sorted highest-points first. The CSV is read once at boot. If saved state exists in the DB it wins — the CSV is *not* re-read on boot when persisted state is present. To pick up CSV edits at runtime, use the **Reload CSV** button in the admin (which sends `reload_csv`, resets game state, but preserves team names and audio settings).
+`src/csv.ts` parses the question CSV (columns: `question`, `answer`, `points`). Rows with the same `question` text are grouped into one `Question`; answers are sorted highest-points first. The CSV is read once at boot. If saved state exists in the DB it wins — the CSV is *not* re-read on boot when persisted state is present. To pick up CSV edits at runtime, use the **Reload CSV** button in the admin (which sends `reload_csv`, resets game state, but preserves team names and audio settings).
+
+The CSV path resolves in `src/server.ts` as: `questions.csv` if it exists, else `questions.template.csv`. `questions.csv` is gitignored — host-specific edits stay local. `questions.template.csv` is the committed starter set; copy it to `questions.csv` to customize without dirtying the repo.
 
 The `reset_game` and `reload_csv` handlers both follow the same idiom: snapshot team names + audio block, rebuild state via `resetGame`, restore the snapshot. If you add another "preserve across reset" field, update both handlers.
 
