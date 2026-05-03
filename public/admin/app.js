@@ -34,6 +34,8 @@ const els = {
   strikesPill: document.getElementById("strikes-pill"),
   answers: document.getElementById("answers"),
   csvInfo: document.getElementById("csv-info"),
+  undoAward: document.getElementById("undo-award"),
+  undoAwardSection: document.getElementById("undo-award-section"),
 };
 
 let lastState = null;
@@ -75,7 +77,21 @@ function render(state) {
   els.roundQuestion.textContent = q ? q.text : "—";
 
   const playing = state.round.kind === "playing";
+  const locked = playing && state.round.locked;
   els.potDisplay.textContent = playing ? state.round.pot : 0;
+  els.potDisplay.parentElement.classList.toggle("pot-locked", locked);
+  els.potDisplay.parentElement.title = locked
+    ? "Pot is locked — leftover reveals won't change it"
+    : "";
+
+  // Undo last award button — only visible when there's an award to undo.
+  if (state.lastAward) {
+    const teamName = state.teams[state.lastAward.team].name;
+    els.undoAward.textContent = `↩ Undo award (${teamName} −${state.lastAward.amount})`;
+    els.undoAwardSection.hidden = false;
+  } else {
+    els.undoAwardSection.hidden = true;
+  }
   els.strikesPill.textContent = playing ? state.round.strikes : 0;
   els.startRound.disabled = playing || !q;
   els.endRound.disabled = !playing;
@@ -214,6 +230,7 @@ document.querySelectorAll('[data-act="adjust"]').forEach((b) => {
 document.querySelectorAll('[data-act="award"]').forEach((b) => {
   b.onclick = () => send({ type: "award_pot", team: Number(b.dataset.team) });
 });
+els.undoAward.onclick = () => send({ type: "undo_award" });
 document.querySelectorAll('[data-act="control"]').forEach((b) => {
   b.onclick = () => {
     const t = b.dataset.team === "" ? null : Number(b.dataset.team);
